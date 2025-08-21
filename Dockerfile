@@ -5,9 +5,9 @@
 #
 # See ‘Earthfile’ for the recipes used in official builds.
 
-FROM golang:alpine AS build
+FROM debian:trixie-slim AS build
 
-RUN apk update && apk add --no-cache git gcc build-base linux-headers
+RUN apt-get update && apt-get install -y git golang build-essential
 
 WORKDIR /build
 COPY . /build
@@ -21,11 +21,11 @@ ENV NAME=${NAME}
 
 RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -ldflags "-extldflags \"-static\" -s -w -X github.com/owncast/owncast/config.GitCommit=$GIT_COMMIT -X github.com/owncast/owncast/config.VersionNumber=$VERSION -X github.com/owncast/owncast/config.BuildPlatform=$NAME" -o owncast .
 
-# Create the image by copying the result of the build into a new alpine image
-FROM alpine:3.22.1
-RUN apk update && apk add --no-cache ffmpeg ffmpeg-libs ca-certificates && update-ca-certificates
+# Create the image by copying the result of the build into a new Debian image
+FROM debian:trixie-slim
+RUN apt-get update && apt-get install -y ffmpeg ca-certificates && update-ca-certificates
 
-RUN addgroup -g 101 -S owncast && adduser -u 101 -S owncast -G owncast
+RUN groupadd -g 101 owncast && useradd owncast -u 101 -g owncast
 
 # Copy owncast assets
 WORKDIR /app
